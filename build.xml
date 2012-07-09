@@ -1,0 +1,2744 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="sogou-map" default="build-channel1" basedir=".">
+	<!-- 定义循环执行任务 -->
+	<taskdef name="foreach" classname="net.sf.antcontrib.logic.ForEach" classpath="libs/ant-contrib-1.0b3.jar" />
+
+	<property name="app-name-base" value="sogoumap-phone-2.3.1">
+	</property>
+	<property file="channel.properties" />
+
+	<target name="build-channel1">
+		<foreach target="for-each" list="${channel}" delimiter="," param="letter" />
+	</target>
+
+	<!--  ********  输出签名的APK文件********-->
+	<!--      属性配置                -->
+
+	<!-- JDK 安装路径，根据实际安装路径更改 -->
+	<property name="JAVA_HOME" value="C:\Program Files\Java\jdk1.7.0_03" />
+
+	<!-- Android SDK包所在路径 ,根据实际安装路径更改 -->
+	<property name="SDK_HOME" value="D:\green\android-sdk-windows" />
+	<!-- SDK JAR 包所在路径，根据实编译版本更改 -->
+	<property name="SDK_JAR" value="D:\green\android-sdk-windows\platforms\android-8" />
+	<property name="Android_Platform_Tools" value="${SDK_HOME}/platform-tools" />
+	<property name="Android_Tools" value="${SDK_HOME}/tools" />
+
+	<!-- 搜狗地图APP的完整包名   -->
+	<property name="App_Package" value="com.sogou.map.android.maps" />
+
+	<!--    签名    -->
+	<!-- 密码 -->
+	<property name="Passwd" value="ericliu741852" />
+	<!-- 别名 -->
+	<property name="alias" value="搜狗地图">
+	</property>
+	<!-- 存放在 project根目录下，根据实际路径更改 -->
+	<property name="keystore" value="keys/sogoumap.dat">
+	</property>
+
+
+	<!-- 生成apk文件的路径 -->
+	<property name="outdir" value="bin" />
+	<!--res资源文件存放路径 -->
+	<property name="resource-dir" value="res" />
+	<!--assets资源文件存放路径 -->
+	<property name="asset-dir" value="assets" />
+	<!--src源文件存放路径 -->
+	<property name="srcdir" value="src" />
+	<condition property="srcdir-ospath" value="${basedir}\${srcdir}" else="${basedir}/${srcdir}">
+		<os family="windows" />
+	</condition>
+	<!--外部引用库（如so文件，jar）保存存放路径-->
+	<property name="external-libs" value="libs" />
+	<condition property="external-libs-ospath" value="${basedir}\${external-libs}" else="${basedir}/${external-libs}">
+		<os family="windows" />
+	</condition>
+	<!--*.java编译后的*.class存放路径 -->
+	<property name="outdir-classes" value="${outdir}/classes" />
+	<condition property="outdir-classes-ospath" value="${basedir}\${outdir-classes}" else="${basedir}/${outdir-classes}">
+		<os family="windows" />
+	</condition>
+	<property name="outdir-r" value="gen" />
+	<!-- classes.dex文件 -->
+	<property name="dex-file" value="classes.dex" />
+	<!-- classes.dex文件存放路径 -->
+	<property name="intermediate-dex" value="${outdir}/${dex-file}" />
+	<condition property="intermediate-dex-ospath" value="${basedir}\${intermediate-dex}" else="${basedir}/${intermediate-dex}">
+		<os family="windows" />
+	</condition>
+
+	<!--*.ap_文件存放路径-->
+	<property name="resources-package" value="${outdir}/${ant.project.name}.ap_" />
+	<condition property="resources-package-ospath" value="${basedir}\${resources-package}" else="${basedir}/${resources-package}">
+		<os family="windows" />
+	</condition>
+	<!--debug签名的apk文件存放路径 -->
+	<property name="out-debug-package" value="${outdir}/${ant.project.name}-debug.apk" />
+	<condition property="out-debug-package-ospath" value="${basedir}\${out-debug-package}" else="${basedir}/${out-debug-package}">
+		<os family="windows" />
+	</condition>
+	<!--未签名的apk文件存放路径 -->
+	<property name="out-unsigned-package" value="${outdir}/${ant.project.name}-unsigned.apk" />
+	<condition property="out-unsigned-package-ospath" value="${basedir}\${out-unsigned-package}" else="${basedir}/${out-unsigned-package}">
+		<os family="windows" />
+	</condition>
+	<!--签名文件签名后的apk文件存放路径 -->
+	<property name="out-signed-package" value="${outdir}/${ant.project.name}-signed.apk" />
+	<condition property="out-signed-package-ospath" value="${basedir}\${out-signed-package}" else="${basedir}/${out-signed-package}">
+		<os family="windows" />
+	</condition>
+
+	<!--zipalign优化或的apk存放路径 -->
+	<condition property="zipalign-package-ospath" value="${outdir}/sogoumap_for_android.apk" else="${basedir}/">
+		<os family="windows" />
+	</condition>
+
+	<!--  Android 编译打包工具       -->
+
+	<property name="android-framework" value="${SDK_JAR}/framework.aidl" />
+	<!-- aapt.exe程序生成R.java和资源包文件 -->
+	<condition property="aapt" value="${Android_Platform_Tools}/aapt.exe" else="${Android_Platform_Tools}/aapt">
+		<os family="windows" />
+	</condition>
+	<!-- aidl.exe将.aidl文件生成*.java文件 -->
+	<condition property="aidl" value="${Android_Platform_Tools}/aidl.exe" else="${Android_Platform_Tools}/aidl">
+		<os family="windows" />
+	</condition>
+	<!-- dx.bat命令行脚本将*.class文件打包生成classes.dex文件  -->
+	<condition property="dx" value="${Android_Platform_Tools}/dx.bat" else="${Android_Platform_Tools}/dx">
+		<os family="windows" />
+	</condition>
+	<!-- apkbuilder.bat命令脚本生成未签名的apk安装文件 -->
+	<condition property="apk-builder" value="${Android_Tools}/apkbuilder.bat" else="${Android_Tools}/apkbuilder">
+		<os family="windows" />
+	</condition>
+	<!-- zipalign.exe可以对apk进行优化 -->
+	<condition property="zipalign" value="${Android_Tools}/zipalign.exe" else="${Android_Tools}/zipalign">
+		<os family="windows" />
+	</condition>
+	<!-- adb工具 -->
+	<condition property="adb" value="${Android_Platform_Tools}/adb.exe" else="${Android_Platform_Tools}/adb">
+		<os family="windows" />
+	</condition>
+
+	<!--   Java 签名工具       -->
+	<!-- jarsigner对未签名的包进行apk签名 -->
+	<condition property="jarsigner" value="${JAVA_HOME}/bin/jarsigner.exe" else="${JAVA_HOME}/bin/jarsigner">
+		<os family="windows" />
+	</condition>
+	<property name="android-jar" value="${SDK_JAR}/android.jar" />
+
+	<!-- 执行任务   -->
+	<target name="mkdir">
+		<echo>******开始创建apk输出路径******</echo>
+		<mkdir dir="${outdir}" />
+		<mkdir dir="${outdir-classes}" />
+		<echo>******创建apk输出路径结束******</echo>
+	</target>
+
+	<!-- 第一步：生成R.java类文件 -->
+	<target name="generate_r_java" depends="mkdir">
+		<echo>******开始生成R.java类文件******</echo>
+		<exec executable="${aapt}" failonerror="true">
+			<arg value="package" />
+			<arg value="-m" />
+			<arg value="-J" />
+			<arg value="${outdir-r}" />
+			<arg value="-M" />
+			<arg value="AndroidManifest.xml" />
+			<arg value="-S" />
+			<arg value="${resource-dir}" />
+			<arg value="-I" />
+			<arg value="${android-jar}" />
+		</exec>
+		<echo>******生成R.java类文件结束******</echo>
+	</target>
+
+	<!-- 第二步：将*.aidl文件生成.java类文件 -->
+	<target name="aidl" depends="mkdir">
+		<echo>******开始将*.aidl文件生成.java类文件******</echo>
+		<apply executable="${aidl}" failonerror="true">
+			<arg value="-p${android-framework}" />
+			<arg value="-I${srcdir}" />
+			<fileset dir="${srcdir}">
+				<include name="**/*.aidl" />
+			</fileset>
+		</apply>
+		<echo>******将*.aidl文件生成.java类文件结束******</echo>
+	</target>
+
+	<!-- 第三步：编译.java类文件生成class文件 -->
+	<target name="compile" depends="mkdir, generate_r_java, aidl">
+		<echo>******开始将.java类文件编译成class文件******</echo>
+		<javac encoding="gbk" target="1.5" debug="true" extdirs="" srcdir="." destdir="${outdir-classes}" bootclasspath="${android-jar}">
+			<classpath>
+				<fileset dir="${external-libs}" includes="*.jar" />
+			</classpath>
+		</javac>
+		<echo>******将.java类文件编译成class文件结束******</echo>
+	</target>
+
+	<!-- 第四步：将class文件打包生成classes.dex文件 -->
+	<target name="dex" depends="compile">
+		<echo>******开始将class文件打包生成classes.dex文件******</echo>
+		<apply executable="${dx}" failonerror="true" parallel="true">
+			<arg value="--dex" />
+			<arg value="--output=${intermediate-dex-ospath}" />
+			<arg path="${outdir-classes-ospath}" />
+			<fileset dir="${external-libs}" includes="*.jar" />
+		</apply>
+		<echo>******将class文件打包生成classes.dex文件结束******</echo>
+	</target>
+
+	<!-- 第五步： 打包资源文件（包括res、assets、androidmanifest.xml等）-->
+	<target name="package-res-and-assets">
+		<echo>******开始打包资源文件（包括res、assets、androidmanifest.xml等）******</echo>
+		<exec executable="${aapt}" failonerror="true">
+			<arg value="package" />
+			<arg value="-f" />
+			<arg value="-M" />
+			<arg value="AndroidManifest.xml" />
+			<arg value="-S" />
+			<arg value="${resource-dir}" />
+			<arg value="-A" />
+			<arg value="${asset-dir}" />
+			<arg value="-I" />
+			<arg value="${android-jar}" />
+			<arg value="-F" />
+			<arg value="${resources-package}" />
+		</exec>
+		<echo>******打包资源文件（包括res、assets、androidmanifest.xml等）文件结束******</echo>
+	</target>
+
+	<!-- 第五步： 打包资源文件（包括res、androidmanifest.xml等），不打包assets-->
+	<target name="package-res-no-assets">
+		<echo>******开始打包资源文件（包括res、androidmanifest.xml等，不打包assets）******</echo>
+		<exec executable="${aapt}" failonerror="true">
+			<arg value="package" />
+			<arg value="-f" />
+			<arg value="-M" />
+			<arg value="AndroidManifest.xml" />
+			<arg value="-S" />
+			<arg value="${resource-dir}" />
+			<arg value="-I" />
+			<arg value="${android-jar}" />
+			<arg value="-F" />
+			<arg value="${resources-package}" />
+		</exec>
+		<echo>******打包资源文件（包括res、androidmanifest.xml等，不打包assets）文件结束******</echo>
+	</target>
+
+	<target name="package-res">
+		<available file="${asset-dir}" type="dir" property="res-target" value="and-assets" />
+		<property name="res-target" value="no-assets" />
+		<antcall target="package-res-${res-target}" />
+	</target>
+
+	<!--第六步 ：生成未签名的apk安装文件 -->
+	<target name="apkbuilder" depends="dex, package-res">
+		<echo>******开始生成未签名的apk安装文件******</echo>
+		<exec executable="${apk-builder}" failonerror="true">
+			<arg value="${out-unsigned-package-ospath}" />
+			<arg value="-u" />
+			<arg value="-z" />
+			<arg value="${resources-package-ospath}" />
+			<arg value="-f" />
+			<arg value="${intermediate-dex-ospath}" />
+			<arg value="-rf" />
+			<arg value="${srcdir-ospath}" />
+			<!--********此处打包*.so文件*****-->
+			<arg value="-nf" />
+			<arg value="${external-libs-ospath}" />
+		</exec>
+		<echo>******生成未签名的apk安装文件结束******</echo>
+	</target>
+
+	<!-- 第七步：未签名的apk进行签名生成签名后的apk文件 -->
+	<target name="jarsigner" depends="apkbuilder">
+		<echo>******开始生成签名后的apk文件******</echo>
+		<exec executable="${jarsigner}" failonerror="true">
+			<arg value="-verbose" />
+			<arg value="-keystore" />
+			<arg value="${keystore}" />
+			<arg value="-storepass" />
+			<arg value="${Passwd}" />
+			<arg value="-signedjar" />
+			<arg value="${out-signed-package-ospath}" />
+			<arg value="${out-unsigned-package-ospath}" />
+			<!--******此处是输入别名 alias,不是签名文件路径******  -->
+			<arg value="${alias}" />
+		</exec>
+		<echo>******生成签名后的apk文件结束******</echo>
+	</target>
+
+	<!-- 第八步： 优化apk（可选）-->
+	<target name="zipalign" depends="jarsigner">
+		<echo>******开始优化apk（可选）文件******</echo>
+		<exec executable="${zipalign}" failonerror="true">
+			<arg value="-v" />
+			<arg value="-f" />
+			<arg value="4" />
+			<arg value="${out-signed-package-ospath}" />
+			<arg value="${zipalign-package-ospath}" />
+		</exec>
+		<echo>******优化apk（可选）文件结束******</echo>
+	</target>
+
+	<!-- 带有debug签名的apk -->
+	<target name="debug" depends="dex, package-res">
+		<echo>******开始生成带有debug签名的apk文件******</echo>
+		<exec executable="${apk-builder}" failonerror="true">
+			<arg value="${out-debug-package-ospath}" />
+			<arg value="-z" />
+			<arg value="${resources-package-ospath}" />
+			<arg value="-f" />
+			<arg value="${intermediate-dex-ospath}" />
+			<arg value="-rf" />
+			<arg value="${srcdir-ospath}" />
+			<!--********此处打包*.so文件*****-->
+			<arg value="-nf" />
+			<arg value="${external-libs-ospath}" />
+		</exec>
+		<echo>******生成带有debug签名的apk文件结束******</echo>
+	</target>
+
+	<target name="adb" depends="zipalign">
+		<exec executable="${adb}" failonerror="true">
+			<arg value="install" />
+			<arg value="-r" />
+			<arg value="${zipalign-package-ospath}" />
+		</exec>
+	</target>
+
+	<!-- 自动卸载apk -->
+	<target name="uninstall">
+		<echo>******开始自动卸载apk******</echo>
+		<exec executable="${adb}" failonerror="true">
+			<arg value="uninstall" />
+			<arg value="${App_Package}" />
+		</exec>
+		<echo>******自动卸载apk结束******</echo>
+	</target>
+
+	<!-- 自动安装apk -->
+	<target name="install" depends="zipalign,uninstall">
+		<echo>******开始自动安装apk******</echo>
+		<exec executable="${adb}" failonerror="true">
+			<arg value="install" />
+			<arg value="${out-signed-package}" />
+		</exec>
+		<echo>******自动安装apk结束******</echo>
+	</target>
+
+	<!-- 自动重新安装apk -->
+	<target name="reinstall" depends="debug">
+		<echo>******开始自动重新安装apk******</echo>
+		<exec executable="${adb}" failonerror="true">
+			<arg value="install" />
+			<arg value="-r" />
+			<arg value="${out-debug-package}" />
+		</exec>
+		<echo>******自动重新安装apk结束******</echo>
+	</target>
+
+
+
+
+	<!-- 循环执行任务 -->
+	<target name="for-each">
+		<condition property="channel-2">
+			<equals arg1="${letter}" arg2="2" />
+		</condition>
+		<antcall target="channel2" />
+
+		<condition property="channel-3">
+			<equals arg1="${letter}" arg2="3" />
+		</condition>
+		<antcall target="channel3" />
+
+		<condition property="channel-4">
+			<equals arg1="${letter}" arg2="4" />
+		</condition>
+		<antcall target="channel4" />
+
+		<condition property="channel-5">
+			<equals arg1="${letter}" arg2="5" />
+		</condition>
+		<antcall target="channel5" />
+
+		<condition property="channel-6">
+			<equals arg1="${letter}" arg2="6" />
+		</condition>
+		<antcall target="channel6" />
+
+		<condition property="channel-7">
+			<equals arg1="${letter}" arg2="7" />
+		</condition>
+		<antcall target="channel7" />
+
+		<condition property="channel-8">
+			<equals arg1="${letter}" arg2="8" />
+		</condition>
+		<antcall target="channel8" />
+
+		<condition property="channel-10">
+			<equals arg1="${letter}" arg2="10" />
+		</condition>
+		<antcall target="channel10" />
+
+		<condition property="channel-13">
+			<equals arg1="${letter}" arg2="13" />
+		</condition>
+		<antcall target="channel13" />
+
+		<condition property="channel-14">
+			<equals arg1="${letter}" arg2="14" />
+		</condition>
+		<antcall target="channel14" />
+
+		<condition property="channel-15">
+			<equals arg1="${letter}" arg2="15" />
+		</condition>
+		<antcall target="channel15" />
+
+		<condition property="channel-601">
+			<equals arg1="${letter}" arg2="601" />
+		</condition>
+		<antcall target="channel601" />
+
+		<condition property="channel-652">
+			<equals arg1="${letter}" arg2="652" />
+		</condition>
+		<antcall target="channel652" />
+
+		<condition property="channel-653">
+			<equals arg1="${letter}" arg2="653" />
+		</condition>
+		<antcall target="channel653" />
+
+		<condition property="channel-654">
+			<equals arg1="${letter}" arg2="654" />
+		</condition>
+		<antcall target="channel654" />
+
+		<condition property="channel-655">
+			<equals arg1="${letter}" arg2="655" />
+		</condition>
+		<antcall target="channel655" />
+
+		<condition property="channel-656">
+			<equals arg1="${letter}" arg2="656" />
+		</condition>
+		<antcall target="channel656" />
+
+		<condition property="channel-701">
+			<equals arg1="${letter}" arg2="701" />
+		</condition>
+		<antcall target="channel701" />
+
+		<condition property="channel-702">
+			<equals arg1="${letter}" arg2="702" />
+		</condition>
+		<antcall target="channel702" />
+
+		<condition property="channel-703">
+			<equals arg1="${letter}" arg2="703" />
+		</condition>
+		<antcall target="channel703" />
+
+		<condition property="channel-751">
+			<equals arg1="${letter}" arg2="751" />
+		</condition>
+		<antcall target="channel751" />
+
+		<condition property="channel-752">
+			<equals arg1="${letter}" arg2="752" />
+		</condition>
+		<antcall target="channel752" />
+
+		<condition property="channel-753">
+			<equals arg1="${letter}" arg2="753" />
+		</condition>
+		<antcall target="channel753" />
+
+		<condition property="channel-754">
+			<equals arg1="${letter}" arg2="754" />
+		</condition>
+		<antcall target="channel754" />
+
+		<condition property="channel-802">
+			<equals arg1="${letter}" arg2="802" />
+		</condition>
+		<antcall target="channel802" />
+
+		<condition property="channel-803">
+			<equals arg1="${letter}" arg2="803" />
+		</condition>
+		<antcall target="channel803" />
+
+		<condition property="channel-804">
+			<equals arg1="${letter}" arg2="804" />
+		</condition>
+		<antcall target="channel804" />
+
+		<condition property="channel-805">
+			<equals arg1="${letter}" arg2="805" />
+		</condition>
+		<antcall target="channel805" />
+
+		<condition property="channel-806">
+			<equals arg1="${letter}" arg2="806" />
+		</condition>
+		<antcall target="channel806" />
+
+		<condition property="channel-807">
+			<equals arg1="${letter}" arg2="807" />
+		</condition>
+		<antcall target="channel807" />
+
+		<condition property="channel-808">
+			<equals arg1="${letter}" arg2="808" />
+		</condition>
+		<antcall target="channel808" />
+
+		<condition property="channel-809">
+			<equals arg1="${letter}" arg2="809" />
+		</condition>
+		<antcall target="channel809" />
+
+		<condition property="channel-810">
+			<equals arg1="${letter}" arg2="810" />
+		</condition>
+		<antcall target="channel810" />
+
+		<condition property="channel-811">
+			<equals arg1="${letter}" arg2="811" />
+		</condition>
+		<antcall target="channel811" />
+
+		<condition property="channel-812">
+			<equals arg1="${letter}" arg2="812" />
+		</condition>
+		<antcall target="channel812" />
+
+		<condition property="channel-813">
+			<equals arg1="${letter}" arg2="813" />
+		</condition>
+		<antcall target="channel813" />
+
+		<condition property="channel-814">
+			<equals arg1="${letter}" arg2="814" />
+		</condition>
+		<antcall target="channel814" />
+
+		<condition property="channel-815">
+			<equals arg1="${letter}" arg2="815" />
+		</condition>
+		<antcall target="channel815" />
+
+		<condition property="channel-816">
+			<equals arg1="${letter}" arg2="816" />
+		</condition>
+		<antcall target="channel816" />
+
+		<condition property="channel-817">
+			<equals arg1="${letter}" arg2="817" />
+		</condition>
+		<antcall target="channel817" />
+
+		<condition property="channel-818">
+			<equals arg1="${letter}" arg2="818" />
+		</condition>
+		<antcall target="channel818" />
+
+		<condition property="channel-820">
+			<equals arg1="${letter}" arg2="820" />
+		</condition>
+		<antcall target="channel820" />
+
+		<condition property="channel-821">
+			<equals arg1="${letter}" arg2="821" />
+		</condition>
+		<antcall target="channel821" />
+
+		<condition property="channel-822">
+			<equals arg1="${letter}" arg2="822" />
+		</condition>
+		<antcall target="channel822" />
+
+		<condition property="channel-823">
+			<equals arg1="${letter}" arg2="823" />
+		</condition>
+		<antcall target="channel823" />
+
+		<condition property="channel-824">
+			<equals arg1="${letter}" arg2="824" />
+		</condition>
+		<antcall target="channel824" />
+
+		<condition property="channel-825">
+			<equals arg1="${letter}" arg2="825" />
+		</condition>
+		<antcall target="channel825" />
+
+		<condition property="channel-826">
+			<equals arg1="${letter}" arg2="826" />
+		</condition>
+		<antcall target="channel826" />
+
+		<condition property="channel-827">
+			<equals arg1="${letter}" arg2="827" />
+		</condition>
+		<antcall target="channel827" />
+
+		<condition property="channel-828">
+			<equals arg1="${letter}" arg2="828" />
+		</condition>
+		<antcall target="channel828" />
+
+		<condition property="channel-829">
+			<equals arg1="${letter}" arg2="829" />
+		</condition>
+		<antcall target="channel829" />
+
+		<condition property="channel-830">
+			<equals arg1="${letter}" arg2="830" />
+		</condition>
+		<antcall target="channel830" />
+
+		<condition property="channel-831">
+			<equals arg1="${letter}" arg2="831" />
+		</condition>
+		<antcall target="channel831" />
+
+		<condition property="channel-832">
+			<equals arg1="${letter}" arg2="832" />
+		</condition>
+		<antcall target="channel832" />
+
+		<condition property="channel-833">
+			<equals arg1="${letter}" arg2="833" />
+		</condition>
+		<antcall target="channel833" />
+
+		<condition property="channel-834">
+			<equals arg1="${letter}" arg2="834" />
+		</condition>
+		<antcall target="channel834" />
+
+		<condition property="channel-836">
+			<equals arg1="${letter}" arg2="836" />
+		</condition>
+		<antcall target="channel836" />
+
+		<condition property="channel-837">
+			<equals arg1="${letter}" arg2="837" />
+		</condition>
+		<antcall target="channel837" />
+
+		<condition property="channel-838">
+			<equals arg1="${letter}" arg2="838" />
+		</condition>
+		<antcall target="channel838" />
+
+		<condition property="channel-839">
+			<equals arg1="${letter}" arg2="839" />
+		</condition>
+		<antcall target="channel839" />
+
+		<condition property="channel-840">
+			<equals arg1="${letter}" arg2="840" />
+		</condition>
+		<antcall target="channel840" />
+
+		<condition property="channel-841">
+			<equals arg1="${letter}" arg2="841" />
+		</condition>
+		<antcall target="channel841" />
+
+		<condition property="channel-842">
+			<equals arg1="${letter}" arg2="842" />
+		</condition>
+		<antcall target="channel842" />
+
+		<condition property="channel-843">
+			<equals arg1="${letter}" arg2="843" />
+		</condition>
+		<antcall target="channel843" />
+
+		<condition property="channel-844">
+			<equals arg1="${letter}" arg2="844" />
+		</condition>
+		<antcall target="channel844" />
+
+		<condition property="channel-845">
+			<equals arg1="${letter}" arg2="845" />
+		</condition>
+		<antcall target="channel845" />
+
+		<condition property="channel-846">
+			<equals arg1="${letter}" arg2="846" />
+		</condition>
+		<antcall target="channel846" />
+
+		<condition property="channel-847">
+			<equals arg1="${letter}" arg2="847" />
+		</condition>
+		<antcall target="channel847" />
+
+		<condition property="channel-848">
+			<equals arg1="${letter}" arg2="848" />
+		</condition>
+		<antcall target="channel848" />
+
+		<condition property="channel-849">
+			<equals arg1="${letter}" arg2="849" />
+		</condition>
+		<antcall target="channel849" />
+
+		<condition property="channel-850">
+			<equals arg1="${letter}" arg2="850" />
+		</condition>
+		<antcall target="channel850" />
+
+		<condition property="channel-851">
+			<equals arg1="${letter}" arg2="851" />
+		</condition>
+		<antcall target="channel851" />
+
+		<condition property="channel-852">
+			<equals arg1="${letter}" arg2="852" />
+		</condition>
+		<antcall target="channel852" />
+
+		<condition property="channel-853">
+			<equals arg1="${letter}" arg2="853" />
+		</condition>
+		<antcall target="channel853" />
+
+		<condition property="channel-854">
+			<equals arg1="${letter}" arg2="854" />
+		</condition>
+		<antcall target="channel854" />
+
+		<condition property="channel-855">
+			<equals arg1="${letter}" arg2="855" />
+		</condition>
+		<antcall target="channel855" />
+
+		<condition property="channel-856">
+			<equals arg1="${letter}" arg2="856" />
+		</condition>
+		<antcall target="channel856" />
+
+		<condition property="channel-857">
+			<equals arg1="${letter}" arg2="857" />
+		</condition>
+		<antcall target="channel857" />
+
+		<condition property="channel-858">
+			<equals arg1="${letter}" arg2="858" />
+		</condition>
+		<antcall target="channel858" />
+
+		<condition property="channel-859">
+			<equals arg1="${letter}" arg2="859" />
+		</condition>
+		<antcall target="channel859" />
+
+		<condition property="channel-860">
+			<equals arg1="${letter}" arg2="860" />
+		</condition>
+		<antcall target="channel860" />
+
+		<condition property="channel-861">
+			<equals arg1="${letter}" arg2="861" />
+		</condition>
+		<antcall target="channel861" />
+
+		<condition property="channel-862">
+			<equals arg1="${letter}" arg2="862" />
+		</condition>
+		<antcall target="channel862" />
+
+		<condition property="channel-863">
+			<equals arg1="${letter}" arg2="863" />
+		</condition>
+		<antcall target="channel863" />
+
+		<condition property="channel-864">
+			<equals arg1="${letter}" arg2="864" />
+		</condition>
+		<antcall target="channel864" />
+
+		<condition property="channel-865">
+			<equals arg1="${letter}" arg2="865" />
+		</condition>
+		<antcall target="channel865" />
+
+		<condition property="channel-866">
+			<equals arg1="${letter}" arg2="866" />
+		</condition>
+		<antcall target="channel866" />
+
+		<condition property="channel-867">
+			<equals arg1="${letter}" arg2="867" />
+		</condition>
+		<antcall target="channel867" />
+
+		<condition property="channel-868">
+			<equals arg1="${letter}" arg2="868" />
+		</condition>
+		<antcall target="channel868" />
+
+		<condition property="channel-869">
+			<equals arg1="${letter}" arg2="869" />
+		</condition>
+		<antcall target="channel869" />
+
+		<condition property="channel-870">
+			<equals arg1="${letter}" arg2="870" />
+		</condition>
+		<antcall target="channel870" />
+
+		<condition property="channel-871">
+			<equals arg1="${letter}" arg2="871" />
+		</condition>
+		<antcall target="channel871" />
+
+		<condition property="channel-872">
+			<equals arg1="${letter}" arg2="872" />
+		</condition>
+		<antcall target="channel872" />
+
+		<condition property="channel-873">
+			<equals arg1="${letter}" arg2="873" />
+		</condition>
+		<antcall target="channel873" />
+
+		<condition property="channel-874">
+			<equals arg1="${letter}" arg2="874" />
+		</condition>
+		<antcall target="channel874" />
+
+		<condition property="channel-875">
+			<equals arg1="${letter}" arg2="875" />
+		</condition>
+		<antcall target="channel875" />
+
+		<condition property="channel-876">
+			<equals arg1="${letter}" arg2="876" />
+		</condition>
+		<antcall target="channel876" />
+
+		<condition property="channel-877">
+			<equals arg1="${letter}" arg2="877" />
+		</condition>
+		<antcall target="channel877" />
+
+		<condition property="channel-878">
+			<equals arg1="${letter}" arg2="878" />
+		</condition>
+		<antcall target="channel878" />
+
+		<condition property="channel-879">
+			<equals arg1="${letter}" arg2="879" />
+		</condition>
+		<antcall target="channel879" />
+
+		<condition property="channel-880">
+			<equals arg1="${letter}" arg2="880" />
+		</condition>
+		<antcall target="channel880" />
+
+		<condition property="channel-881">
+			<equals arg1="${letter}" arg2="881" />
+		</condition>
+		<antcall target="channel881" />
+
+		<condition property="channel-882">
+			<equals arg1="${letter}" arg2="882" />
+		</condition>
+		<antcall target="channel882" />
+
+		<condition property="channel-883">
+			<equals arg1="${letter}" arg2="883" />
+		</condition>
+		<antcall target="channel883" />
+
+		<condition property="channel-884">
+			<equals arg1="${letter}" arg2="884" />
+		</condition>
+		<antcall target="channel884" />
+
+		<condition property="channel-885">
+			<equals arg1="${letter}" arg2="885" />
+		</condition>
+		<antcall target="channel885" />
+
+		<condition property="channel-886">
+			<equals arg1="${letter}" arg2="886" />
+		</condition>
+		<antcall target="channel886" />
+
+		<condition property="channel-887">
+			<equals arg1="${letter}" arg2="887" />
+		</condition>
+		<antcall target="channel887" />
+
+		<condition property="channel-888">
+			<equals arg1="${letter}" arg2="888" />
+		</condition>
+		<antcall target="channel888" />
+
+		<condition property="channel-901">
+			<equals arg1="${letter}" arg2="901" />
+		</condition>
+		<antcall target="channel901" />
+
+		<condition property="channel-1001">
+			<equals arg1="${letter}" arg2="1001" />
+		</condition>
+		<antcall target="channel1001" />
+
+		<condition property="channel-1002">
+			<equals arg1="${letter}" arg2="1002" />
+		</condition>
+		<antcall target="channel1002" />
+
+		<condition property="channel-1003">
+			<equals arg1="${letter}" arg2="1003" />
+		</condition>
+		<antcall target="channel1003" />
+
+		<condition property="channel-1004">
+			<equals arg1="${letter}" arg2="1004" />
+		</condition>
+		<antcall target="channel1004" />
+
+		<condition property="channel-1005">
+			<equals arg1="${letter}" arg2="1005" />
+		</condition>
+		<antcall target="channel1005" />
+
+		<condition property="channel-1006">
+			<equals arg1="${letter}" arg2="1006" />
+		</condition>
+		<antcall target="channel1006" />
+
+		<condition property="channel-1007">
+			<equals arg1="${letter}" arg2="1007" />
+		</condition>
+		<antcall target="channel1007" />
+
+		<condition property="channel-1008">
+			<equals arg1="${letter}" arg2="1008" />
+		</condition>
+		<antcall target="channel1008" />
+
+		<condition property="channel-1009">
+			<equals arg1="${letter}" arg2="1009" />
+		</condition>
+		<antcall target="channel1009" />
+
+		<condition property="channel-1010">
+			<equals arg1="${letter}" arg2="1010" />
+		</condition>
+		<antcall target="channel1010" />
+
+
+		<condition property="channel-2001">
+			<equals arg1="${letter}" arg2="2001" />
+		</condition>
+		<antcall target="channel2001" />
+
+		<condition property="channel-2002">
+			<equals arg1="${letter}" arg2="2002" />
+		</condition>
+		<antcall target="channel2002" />
+
+		<condition property="channel-2003">
+			<equals arg1="${letter}" arg2="2003" />
+		</condition>
+		<antcall target="channel2003" />
+
+		<condition property="channel-2004">
+			<equals arg1="${letter}" arg2="2004" />
+		</condition>
+		<antcall target="channel2004" />
+
+		<condition property="channel-2005">
+			<equals arg1="${letter}" arg2="2005" />
+		</condition>
+		<antcall target="channel2005" />
+
+	</target>
+
+
+
+	<target name="channel2" if="channel-2">
+		<property name="channel-name" value="${2}" />
+		<echo>${2}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${2}.apk" />
+	</target>
+
+	<target name="channel3" if="channel-3">
+		<property name="channel-name" value="${3}" />
+		<echo>${3}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${3}.apk" />
+	</target>
+
+	<target name="channel4" if="channel-4">
+		<property name="channel-name" value="${4}" />
+		<echo>${4}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${4}.apk" />
+	</target>
+
+	<target name="channel5" if="channel-5">
+		<property name="channel-name" value="${5}" />
+		<echo>${5}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${5}.apk" />
+	</target>
+
+	<target name="channel6" if="channel-6">
+		<property name="channel-name" value="${6}" />
+		<echo>${6}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${6}.apk" />
+	</target>
+
+	<target name="channel7" if="channel-7">
+		<property name="channel-name" value="${7}" />
+		<echo>${7}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${7}.apk" />
+	</target>
+
+	<target name="channel8" if="channel-8">
+		<property name="channel-name" value="${8}" />
+		<echo>${8}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${8}.apk" />
+	</target>
+
+	<target name="channel10" if="channel-10">
+		<property name="channel-name" value="${10}" />
+		<echo>${10}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${10}.apk" />
+	</target>
+
+	<target name="channel13" if="channel-13">
+		<property name="channel-name" value="${13}" />
+		<echo>${13}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${13}.apk" />
+	</target>
+
+	<target name="channel14" if="channel-14">
+		<property name="channel-name" value="${14}" />
+		<echo>${14}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${14}.apk" />
+	</target>
+
+	<target name="channel15" if="channel-15">
+		<property name="channel-name" value="${15}" />
+		<echo>${15}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${15}.apk" />
+	</target>
+
+	<target name="channel601" if="channel-601">
+		<property name="channel-name" value="${601}" />
+		<echo>${601}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${601}.apk" />
+	</target>
+
+	<target name="channel652" if="channel-652">
+		<property name="channel-name" value="${652}" />
+		<echo>${652}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${652}.apk" />
+	</target>
+
+	<target name="channel653" if="channel-653">
+		<property name="channel-name" value="${653}" />
+		<echo>${653}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${653}.apk" />
+	</target>
+
+	<target name="channel654" if="channel-654">
+		<property name="channel-name" value="${654}" />
+		<echo>${654}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${654}.apk" />
+	</target>
+
+	<target name="channel655" if="channel-655">
+		<property name="channel-name" value="${655}" />
+		<echo>${655}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${655}.apk" />
+	</target>
+
+	<target name="channel656" if="channel-656">
+		<property name="channel-name" value="${656}" />
+		<echo>${656}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${656}.apk" />
+	</target>
+
+	<target name="channel701" if="channel-701">
+		<property name="channel-name" value="${701}" />
+		<echo>${701}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${701}.apk" />
+	</target>
+
+	<target name="channel702" if="channel-702">
+		<property name="channel-name" value="${702}" />
+		<echo>${702}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${702}.apk" />
+	</target>
+
+	<target name="channel703" if="channel-703">
+		<property name="channel-name" value="${703}" />
+		<echo>${703}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${703}.apk" />
+	</target>
+
+	<target name="channel751" if="channel-751">
+		<property name="channel-name" value="${751}" />
+		<echo>${751}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${751}.apk" />
+	</target>
+
+	<target name="channel752" if="channel-752">
+		<property name="channel-name" value="${752}" />
+		<echo>${752}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${752}.apk" />
+	</target>
+
+	<target name="channel753" if="channel-753">
+		<property name="channel-name" value="${753}" />
+		<echo>${753}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${753}.apk" />
+	</target>
+
+	<target name="channel754" if="channel-754">
+		<property name="channel-name" value="${754}" />
+		<echo>${754}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${754}.apk" />
+	</target>
+
+	<target name="channel801" if="channel-801">
+		<property name="channel-name" value="${801}" />
+		<echo>${801}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${801}.apk" />
+	</target>
+
+	<target name="channel802" if="channel-802">
+		<property name="channel-name" value="${802}" />
+		<echo>${802}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${802}.apk" />
+	</target>
+
+	<target name="channel803" if="channel-803">
+		<property name="channel-name" value="${803}" />
+		<echo>${803}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${803}.apk" />
+	</target>
+
+	<target name="channel804" if="channel-804">
+		<property name="channel-name" value="${804}" />
+		<echo>${804}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${804}.apk" />
+	</target>
+
+	<target name="channel805" if="channel-805">
+		<property name="channel-name" value="${805}" />
+		<echo>${805}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${805}.apk" />
+	</target>
+
+	<target name="channel806" if="channel-806">
+		<property name="channel-name" value="${806}" />
+		<echo>${806}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${806}.apk" />
+	</target>
+
+	<target name="channel807" if="channel-807">
+		<property name="channel-name" value="${807}" />
+		<echo>${807}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${807}.apk" />
+	</target>
+
+	<target name="channel808" if="channel-808">
+		<property name="channel-name" value="${808}" />
+		<echo>${808}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${808}.apk" />
+	</target>
+
+	<target name="channel809" if="channel-809">
+		<property name="channel-name" value="${809}" />
+		<echo>${809}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${809}.apk" />
+	</target>
+
+	<target name="channel810" if="channel-810">
+		<property name="channel-name" value="${810}" />
+		<echo>${810}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${810}.apk" />
+	</target>
+
+	<target name="channel811" if="channel-811">
+		<property name="channel-name" value="${811}" />
+		<echo>${811}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${811}.apk" />
+	</target>
+
+	<target name="channel812" if="channel-812">
+		<property name="channel-name" value="${812}" />
+		<echo>${812}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${812}.apk" />
+	</target>
+
+	<target name="channel813" if="channel-813">
+		<property name="channel-name" value="${813}" />
+		<echo>${813}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${813}.apk" />
+	</target>
+
+	<target name="channel814" if="channel-814">
+		<property name="channel-name" value="${814}" />
+		<echo>${814}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${814}.apk" />
+	</target>
+
+	<target name="channel815" if="channel-815">
+		<property name="channel-name" value="${815}" />
+		<echo>${815}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${815}.apk" />
+	</target>
+
+	<target name="channel816" if="channel-816">
+		<property name="channel-name" value="${816}" />
+		<echo>${816}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${816}.apk" />
+	</target>
+
+	<target name="channel817" if="channel-817">
+		<property name="channel-name" value="${817}" />
+		<echo>${817}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${817}.apk" />
+	</target>
+
+	<target name="channel818" if="channel-818">
+		<property name="channel-name" value="${818}" />
+		<echo>${818}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${818}.apk" />
+	</target>
+
+	<target name="channel820" if="channel-820">
+		<property name="channel-name" value="${820}" />
+		<echo>${820}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${820}.apk" />
+	</target>
+
+	<target name="channel821" if="channel-821">
+		<property name="channel-name" value="${821}" />
+		<echo>${821}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${821}.apk" />
+	</target>
+
+	<target name="channel822" if="channel-822">
+		<property name="channel-name" value="${822}" />
+		<echo>${822}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${822}.apk" />
+	</target>
+
+	<target name="channel823" if="channel-823">
+		<property name="channel-name" value="${823}" />
+		<echo>${823}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${823}.apk" />
+	</target>
+
+	<target name="channel824" if="channel-824">
+		<property name="channel-name" value="${824}" />
+		<echo>${824}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${824}.apk" />
+	</target>
+
+	<target name="channel825" if="channel-825">
+		<property name="channel-name" value="${825}" />
+		<echo>${825}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${825}.apk" />
+	</target>
+
+	<target name="channel826" if="channel-826">
+		<property name="channel-name" value="${826}" />
+		<echo>${826}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${826}.apk" />
+	</target>
+
+	<target name="channel827" if="channel-827">
+		<property name="channel-name" value="${827}" />
+		<echo>${827}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${827}.apk" />
+	</target>
+
+	<target name="channel828" if="channel-828">
+		<property name="channel-name" value="${828}" />
+		<echo>${828}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${828}.apk" />
+	</target>
+
+	<target name="channel829" if="channel-829">
+		<property name="channel-name" value="${829}" />
+		<echo>${829}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${829}.apk" />
+	</target>
+
+	<target name="channel830" if="channel-830">
+		<property name="channel-name" value="${830}" />
+		<echo>${830}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${830}.apk" />
+	</target>
+
+	<target name="channel831" if="channel-831">
+		<property name="channel-name" value="${831}" />
+		<echo>${831}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${831}.apk" />
+	</target>
+
+	<target name="channel832" if="channel-832">
+		<property name="channel-name" value="${832}" />
+		<echo>${832}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${832}.apk" />
+	</target>
+
+	<target name="channel833" if="channel-833">
+		<property name="channel-name" value="${833}" />
+		<echo>${833}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${833}.apk" />
+	</target>
+
+	<target name="channel834" if="channel-834">
+		<property name="channel-name" value="${834}" />
+		<echo>${834}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${834}.apk" />
+	</target>
+
+	<target name="channel836" if="channel-836">
+		<property name="channel-name" value="${836}" />
+		<echo>${836}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${836}.apk" />
+	</target>
+
+	<target name="channel837" if="channel-837">
+		<property name="channel-name" value="${837}" />
+		<echo>${837}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${837}.apk" />
+	</target>
+
+	<target name="channel838" if="channel-838">
+		<property name="channel-name" value="${838}" />
+		<echo>${838}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${838}.apk" />
+	</target>
+
+	<target name="channel839" if="channel-839">
+		<property name="channel-name" value="${839}" />
+		<echo>${839}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${839}.apk" />
+	</target>
+
+	<target name="channel840" if="channel-840">
+		<property name="channel-name" value="${840}" />
+		<echo>${840}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${840}.apk" />
+	</target>
+
+	<target name="channel841" if="channel-841">
+		<property name="channel-name" value="${841}" />
+		<echo>${841}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${841}.apk" />
+	</target>
+
+	<target name="channel842" if="channel-842">
+		<property name="channel-name" value="${842}" />
+		<echo>${842}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${842}.apk" />
+	</target>
+
+	<target name="channel843" if="channel-843">
+		<property name="channel-name" value="${843}" />
+		<echo>${843}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${843}.apk" />
+	</target>
+
+	<target name="channel844" if="channel-844">
+		<property name="channel-name" value="${844}" />
+		<echo>${844}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${844}.apk" />
+	</target>
+
+	<target name="channel845" if="channel-845">
+		<property name="channel-name" value="${845}" />
+		<echo>${845}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${845}.apk" />
+	</target>
+
+	<target name="channel846" if="channel-846">
+		<property name="channel-name" value="${846}" />
+		<echo>${846}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${846}.apk" />
+	</target>
+
+	<target name="channel847" if="channel-847">
+		<property name="channel-name" value="${847}" />
+		<echo>${847}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${847}.apk" />
+	</target>
+
+	<target name="channel848" if="channel-848">
+		<property name="channel-name" value="${848}" />
+		<echo>${848}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${848}.apk" />
+	</target>
+
+	<target name="channel849" if="channel-849">
+		<property name="channel-name" value="${849}" />
+		<echo>${849}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${849}.apk" />
+	</target>
+
+	<target name="channel850" if="channel-850">
+		<property name="channel-name" value="${850}" />
+		<echo>${850}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${850}.apk" />
+	</target>
+
+	<target name="channel851" if="channel-851">
+		<property name="channel-name" value="${851}" />
+		<echo>${851}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${851}.apk" />
+	</target>
+
+	<target name="channel852" if="channel-852">
+		<property name="channel-name" value="${852}" />
+		<echo>${852}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${852}.apk" />
+	</target>
+
+	<target name="channel853" if="channel-853">
+		<property name="channel-name" value="${853}" />
+		<echo>${853}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${853}.apk" />
+	</target>
+
+	<target name="channel854" if="channel-854">
+		<property name="channel-name" value="${854}" />
+		<echo>${854}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${854}.apk" />
+	</target>
+
+	<target name="channel855" if="channel-855">
+		<property name="channel-name" value="${855}" />
+		<echo>${855}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${855}.apk" />
+	</target>
+
+	<target name="channel856" if="channel-856">
+		<property name="channel-name" value="${856}" />
+		<echo>${856}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${856}.apk" />
+	</target>
+
+	<target name="channel857" if="channel-857">
+		<property name="channel-name" value="${857}" />
+		<echo>${857}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${857}.apk" />
+	</target>
+
+	<target name="channel858" if="channel-858">
+		<property name="channel-name" value="${858}" />
+		<echo>${858}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${858}.apk" />
+	</target>
+
+	<target name="channel859" if="channel-859">
+		<property name="channel-name" value="${859}" />
+		<echo>${859}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${859}.apk" />
+	</target>
+
+	<target name="channel860" if="channel-860">
+		<property name="channel-name" value="${860}" />
+		<echo>${860}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${860}.apk" />
+	</target>
+
+	<target name="channel861" if="channel-861">
+		<property name="channel-name" value="${861}" />
+		<echo>${861}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${861}.apk" />
+	</target>
+
+	<target name="channel862" if="channel-862">
+		<property name="channel-name" value="${862}" />
+		<echo>${862}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${862}.apk" />
+	</target>
+
+	<target name="channel863" if="channel-863">
+		<property name="channel-name" value="${863}" />
+		<echo>${863}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${863}.apk" />
+	</target>
+
+	<target name="channel864" if="channel-864">
+		<property name="channel-name" value="${864}" />
+		<echo>${864}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${864}.apk" />
+	</target>
+
+	<target name="channel865" if="channel-865">
+		<property name="channel-name" value="${865}" />
+		<echo>${865}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${865}.apk" />
+	</target>
+
+	<target name="channel866" if="channel-866">
+		<property name="channel-name" value="${866}" />
+		<echo>${866}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${866}.apk" />
+	</target>
+
+	<target name="channel867" if="channel-867">
+		<property name="channel-name" value="${867}" />
+		<echo>${867}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${867}.apk" />
+	</target>
+
+	<target name="channel868" if="channel-868">
+		<property name="channel-name" value="${868}" />
+		<echo>${868}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${868}.apk" />
+	</target>
+
+	<target name="channel869" if="channel-869">
+		<property name="channel-name" value="${869}" />
+		<echo>${869}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${869}.apk" />
+	</target>
+
+	<target name="channel870" if="channel-870">
+		<property name="channel-name" value="${870}" />
+		<echo>${870}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${870}.apk" />
+	</target>
+
+	<target name="channel871" if="channel-871">
+		<property name="channel-name" value="${871}" />
+		<echo>${871}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${871}.apk" />
+	</target>
+
+	<target name="channel872" if="channel-872">
+		<property name="channel-name" value="${872}" />
+		<echo>${872}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${872}.apk" />
+	</target>
+
+	<target name="channel873" if="channel-873">
+		<property name="channel-name" value="${873}" />
+		<echo>${873}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${873}.apk" />
+	</target>
+
+	<target name="channel874" if="channel-874">
+		<property name="channel-name" value="${874}" />
+		<echo>${874}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${874}.apk" />
+	</target>
+
+	<target name="channel875" if="channel-875">
+		<property name="channel-name" value="${875}" />
+		<echo>${875}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${875}.apk" />
+	</target>
+
+	<target name="channel876" if="channel-876">
+		<property name="channel-name" value="${876}" />
+		<echo>${876}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${876}.apk" />
+	</target>
+
+	<target name="channel877" if="channel-877">
+		<property name="channel-name" value="${877}" />
+		<echo>${877}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${877}.apk" />
+	</target>
+
+	<target name="channel878" if="channel-878">
+		<property name="channel-name" value="${878}" />
+		<echo>${878}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${878}.apk" />
+	</target>
+
+	<target name="channel879" if="channel-879">
+		<property name="channel-name" value="${879}" />
+		<echo>${879}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${879}.apk" />
+	</target>
+
+	<target name="channel880" if="channel-880">
+		<property name="channel-name" value="${880}" />
+		<echo>${880}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${880}.apk" />
+	</target>
+
+	<target name="channel881" if="channel-881">
+		<property name="channel-name" value="${881}" />
+		<echo>${881}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${881}.apk" />
+	</target>
+
+	<target name="channel882" if="channel-882">
+		<property name="channel-name" value="${882}" />
+		<echo>${882}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${882}.apk" />
+	</target>
+
+	<target name="channel883" if="channel-883">
+		<property name="channel-name" value="${883}" />
+		<echo>${882}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${883}.apk" />
+	</target>
+
+	<target name="channel884" if="channel-884">
+		<property name="channel-name" value="${884}" />
+		<echo>${882}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${884}.apk" />
+	</target>
+
+	<target name="channel885" if="channel-885">
+		<property name="channel-name" value="${885}" />
+		<echo>${882}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${885}.apk" />
+	</target>
+
+	<target name="channel886" if="channel-886">
+		<property name="channel-name" value="${886}" />
+		<echo>${882}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${886}.apk" />
+	</target>
+
+	<target name="channel887" if="channel-887">
+		<property name="channel-name" value="${887}" />
+		<echo>${882}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${887}.apk" />
+	</target>
+
+	<target name="channel888" if="channel-888">
+		<property name="channel-name" value="${888}" />
+		<echo>${882}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${888}.apk" />
+	</target>
+
+
+	<target name="channel901" if="channel-901">
+		<property name="channel-name" value="${901}" />
+		<echo>${901}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${901}.apk" />
+	</target>
+
+	<target name="channel1001" if="channel-1001">
+		<property name="channel-name" value="${1001}" />
+		<echo>${1001}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${1001}.apk" />
+	</target>
+
+	<target name="channel1002" if="channel-1002">
+		<property name="channel-name" value="${1002}" />
+		<echo>${1002}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${1002}.apk" />
+	</target>
+
+	<target name="channel1003" if="channel-1003">
+		<property name="channel-name" value="${1003}" />
+		<echo>${1002}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${1003}.apk" />
+	</target>
+
+	<target name="channel1004" if="channel-1004">
+		<property name="channel-name" value="${1004}" />
+		<echo>${1002}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${1004}.apk" />
+	</target>
+
+	<target name="channel1005" if="channel-1005">
+		<property name="channel-name" value="${1005}" />
+		<echo>${1002}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${1005}.apk" />
+	</target>
+
+	<target name="channel1006" if="channel-1006">
+		<property name="channel-name" value="${1006}" />
+		<echo>${1002}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${1006}.apk" />
+	</target>
+
+	<target name="channel1007" if="channel-1007">
+		<property name="channel-name" value="${1007}" />
+		<echo>${1002}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${1007}.apk" />
+	</target>
+
+	<target name="channel1008" if="channel-1008">
+		<property name="channel-name" value="${1008}" />
+		<echo>${1002}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${1008}.apk" />
+	</target>
+
+	<target name="channel1009" if="channel-1009">
+		<property name="channel-name" value="${1009}" />
+		<echo>${1002}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${1009}.apk" />
+	</target>
+
+	<target name="channel1010" if="channel-1010">
+		<property name="channel-name" value="${1010}" />
+		<echo>${1010}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${1010}.apk" />
+	</target>
+
+	<target name="channel2001" if="channel-2001">
+		<property name="channel-name" value="${2001}" />
+		<echo>${1002}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${2001}.apk" />
+	</target>
+
+	<target name="channel2002" if="channel-2002">
+		<property name="channel-name" value="${2002}" />
+		<echo>${1002}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${2002}.apk" />
+	</target>
+
+	<target name="channel2003" if="channel-2003">
+		<property name="channel-name" value="${2003}" />
+		<echo>${1002}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${2003}.apk" />
+	</target>
+
+	<target name="channel2004" if="channel-2004">
+		<property name="channel-name" value="${2004}" />
+		<echo>${1002}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${2004}.apk" />
+	</target>
+
+	<target name="channel2005" if="channel-2005">
+		<property name="channel-name" value="${2005}" />
+		<echo>${2005}</echo>
+
+		<copy file="beans_product.xml.template" overwrite="true" tofile="res/raw/beans_product.xml">
+			<filterset>
+				<filter token="bsns" value="${letter}" />
+			</filterset>
+		</copy>
+
+		<antcall target="zipalign" />
+		<move file="bin/sogoumap_for_android.apk" tofile="channel/${app-name-base}-${2005}.apk" />
+	</target>
+</project>
